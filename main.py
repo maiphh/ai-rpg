@@ -1,9 +1,8 @@
 from player import Player
-from game import start_game, continue_game
+from game import *
 
 def main():
     player_name = input("Enter your character's name: ")
-    global player
     player = Player(name=player_name)
     
     start_game(player)

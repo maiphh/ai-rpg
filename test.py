@@ -2,7 +2,6 @@ from typing import List, Tuple, Dict, Any
 import re
 from action_config import ACTIONS
 from player import Player
-from main import *
 
 def parse_ai_response(response: str) -> Tuple[str, List[Tuple[str, List]]]:
     """

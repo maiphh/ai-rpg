@@ -24,6 +24,36 @@ class Player:
         if self.hp > self.max_hp:
             self.hp = self.max_hp
         return self.hp
+    
+    def adjust_atk(self, amount):
+        print(f"{self.name}'s attack adjusted by {amount}!")
+        self.atk += amount
+        return self.atk
+
+    def adjust_df(self, amount):
+        print(f"{self.name}'s defense adjusted by {amount}!")
+        self.df += amount
+        return self.df
+    
+    def add_item(self, item_name, item_description, is_consumable=False):
+        item = {
+            "name": item_name,
+            "description": item_description,
+            "is_consumable": is_consumable
+        }
+        self.inventory.append(item)
+        print(f"{self.name} added {item_name} to inventory.")
+        return self.inventory
+    
+    def use_item(self, item_name):
+        for item in self.inventory:
+            if item["name"] == item_name:
+                if item["is_consumable"]:
+                    print(f"{self.name} uses {item_name}.")
+                    self.inventory.remove(item)
+                    return f"Used {item_name}."
+                
+        return f"{item_name} not found in inventory."
 
     def get_info(self):
         return {
