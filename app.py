@@ -1,232 +1,151 @@
-import streamlit as st
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from game_engine import GameEngine
 from player import Player
-from game import *
+import uuid
+import os
 
-def initialize_session_state():
-    """Initialize session state variables"""
-    if 'player' not in st.session_state:
-        st.session_state.player = None
-    if 'game_started' not in st.session_state:
-        st.session_state.game_started = False
-    if 'game_log' not in st.session_state:
-        st.session_state.game_log = []
-    if 'game_over' not in st.session_state:
-        st.session_state.game_over = False
+app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
-def add_to_log(message):
-    """Add message to game log"""
-    st.session_state.game_log.append(message)
+# Store active games (in production, use a database)
+active_games = {}
 
-def main():
-    st.set_page_config(page_title="AI RPG Game", page_icon="⚔️", layout="wide")
-    
-    initialize_session_state()
-    
-    st.title("⚔️ AI RPG Adventure")
-    
-    # Sidebar for character info
-    with st.sidebar:
-        st.header("Character Info")
-        
-        if st.session_state.player:
-            player = st.session_state.player
-            st.write(f"**Name:** {player.name}")
-            st.write(f"**Level:** {player.level}")
-            st.write(f"**HP:** {player.hp}/{player.max_hp}")
-            
-            # Display stats (using actual Player attributes)
-            st.subheader("Stats")
-            st.write(f"**Attack:** {player.atk}")
-            st.write(f"**Defense:** {player.df}")
-            
-            # Display inventory
-            if hasattr(player, 'inventory') and player.inventory:
-                st.subheader("Inventory")
-                for item in player.inventory:
-                    if isinstance(item, dict):
-                        st.write(f"• **{item['name']}**: {item['description']}")
-                    else:
-                        st.write(f"• {item}")
-            else:
-                st.subheader("Inventory")
-                st.write("*Empty*")
-        else:
-            st.write("No character created yet")
-    
-    # Main game area
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Character creation
-        if not st.session_state.game_started:
-            st.header("Create Your Character")
-            
-            with st.form("character_creation"):
-                player_name = st.text_input("Enter your character's name:", 
-                                          placeholder="Enter character name...")
-                submitted = st.form_submit_button("Start Adventure")
-                
-                if submitted and player_name:
-                    st.session_state.player = Player(name=player_name)
-                    st.session_state.game_started = True
-                    add_to_log(f"Welcome, {player_name}! Your adventure begins...")
-                    
-                    # Start the game
-                    try:
-                        start_game(st.session_state.player)
-                        add_to_log("Game initialized successfully!")
-                    except Exception as e:
-                        add_to_log(f"Error starting game: {e}")
-                    
-                    st.rerun()
-                elif submitted and not player_name:
-                    st.error("Please enter a character name!")
-        
-        # Game interface
-        else:
-            st.header(f"Adventure of {st.session_state.player.name}")
-            
-            # Player input section
-            if not st.session_state.game_over:
-                st.subheader("Your Action")
-                
-                # Text input for player actions
-                with st.form("player_action_form"):
-                    player_input = st.text_input(
-                        "What do you want to do?", 
-                        placeholder="Enter your action (e.g., '1', 'attack goblin', 'use health potion')...",
-                        key="action_input"
-                    )
-                    col_submit, col_continue = st.columns([1, 1])
-                    
-                    with col_submit:
-                        action_submitted = st.form_submit_button("Take Action", type="primary")
-                    
-                    with col_continue:
-                        continue_submitted = st.form_submit_button("Continue Story")
-                
-                # Handle player input
-                if action_submitted and player_input:
-                    try:
-                        add_to_log(f"🎯 You: {player_input}")
-                        
-                        # Send player input to the game
-                        from game import chat
-                        response = chat(st.session_state.player, player_input)
-                        
-                        # Add the AI response to log
-                        add_to_log(f"🎮 {response}")
-                        
-                        # Check if player died
-                        if st.session_state.player.hp <= 0:
-                            st.session_state.game_over = True
-                            add_to_log("💀 Game Over! Your character has fallen.")
-                            
-                    except Exception as e:
-                        add_to_log(f"Error: {e}")
-                    
-                    st.rerun()
-                
-                elif continue_submitted:
-                    try:
-                        # Continue without specific input
-                        from game import chat
-                        response = chat(st.session_state.player, "Continue the adventure")
-                        
-                        # Add the AI response to log
-                        add_to_log(f"🎮 {response}")
-                        
-                        # Check if player died
-                        if st.session_state.player.hp <= 0:
-                            st.session_state.game_over = True
-                            add_to_log("💀 Game Over! Your character has fallen.")
-                            
-                    except Exception as e:
-                        add_to_log(f"Error: {e}")
-                    
-                    st.rerun()
-                
-                elif action_submitted and not player_input:
-                    st.warning("Please enter an action!")
-            
-            # Quick action buttons
-            if not st.session_state.game_over:
-                st.subheader("Quick Actions")
-                col_a, col_b, col_c = st.columns(3)
-                
-                with col_a:
-                    if st.button("View Stats"):
-                        add_to_log(f"📊 Current Stats - HP: {st.session_state.player.hp}/{st.session_state.player.max_hp}, ATK: {st.session_state.player.atk}, DEF: {st.session_state.player.df}, Level: {st.session_state.player.level}")
-                
-                with col_b:
-                    if st.button("Rest", help="Restore some HP"):
-                        if hasattr(st.session_state.player, 'rest'):
-                            st.session_state.player.rest()
-                        else:
-                            # Simple rest implementation
-                            heal_amount = min(10, st.session_state.player.max_hp - st.session_state.player.hp)
-                            st.session_state.player.hp += heal_amount
-                        add_to_log(f"🛌 You rest and recover some health. HP: {st.session_state.player.hp}")
-                        st.rerun()
-                
-                with col_c:
-                    if st.button("Use Item"):
-                        if st.session_state.player.inventory:
-                            # Show inventory items as selectbox
-                            st.session_state.show_inventory = True
-                        else:
-                            add_to_log("🎒 Your inventory is empty!")
-                
-                # Inventory usage
-                if hasattr(st.session_state, 'show_inventory') and st.session_state.show_inventory:
-                    st.subheader("Use Item from Inventory")
-                    if st.session_state.player.inventory:
-                        item_names = [item['name'] if isinstance(item, dict) else str(item) for item in st.session_state.player.inventory]
-                        selected_item = st.selectbox("Select item to use:", item_names)
-                        
-                        col_use, col_cancel = st.columns(2)
-                        with col_use:
-                            if st.button("Use Selected Item"):
-                                try:
-                                    result = st.session_state.player.use_item(selected_item)
-                                    add_to_log(f"🎒 {result}")
-                                    st.session_state.show_inventory = False
-                                    st.rerun()
-                                except Exception as e:
-                                    add_to_log(f"Error using item: {e}")
-                        
-                        with col_cancel:
-                            if st.button("Cancel"):
-                                st.session_state.show_inventory = False
-                                st.rerun()
-            
-            # Game over screen
-            if st.session_state.game_over:
-                st.error("💀 Game Over!")
-                if st.button("Start New Game"):
-                    # Reset session state
-                    st.session_state.player = None
-                    st.session_state.game_started = False
-                    st.session_state.game_log = []
-                    st.session_state.game_over = False
-                    st.rerun()
-    
-    with col2:
-        st.header("Game Log")
-        
-        # Display game log
-        log_container = st.container()
-        with log_container:
-            if st.session_state.game_log:
-                for i, message in enumerate(reversed(st.session_state.game_log[-20:])):  # Show last 20 messages
-                    st.text(message)
-            else:
-                st.text("Game log will appear here...")
-        
-        # Clear log button
-        if st.button("Clear Log"):
-            st.session_state.game_log = []
-            st.rerun()
+@app.route('/')
+def index():
+    """Main landing page - player registration"""
+    if 'player_name' in session and 'game_id' in session:
+        # Player already registered, redirect to game
+        return redirect(url_for('game'))
+    return render_template('index.html')
 
-if __name__ == "__main__":
-    main()
+@app.route('/register', methods=['POST'])
+def register():
+    """Handle player registration"""
+    player_name = request.form.get('player_name', '').strip()
+    
+    if not player_name:
+        return render_template('index.html', error="Please enter a valid name!")
+    
+    # Create unique game session
+    game_id = str(uuid.uuid4())
+    
+    # Create player and game engine
+    player = Player(player_name)
+    game_engine = GameEngine(session_id=game_id)
+    
+    # Store in session and active games
+    session['player_name'] = player_name
+    session['game_id'] = game_id
+    
+    active_games[game_id] = {
+        'player': player,
+        'game_engine': game_engine
+    }
+    
+    return redirect(url_for('game'))
+
+@app.route('/game')
+def game():
+    """Main game page"""
+    if 'player_name' not in session or 'game_id' not in session:
+        return redirect(url_for('index'))
+    
+    game_id = session['game_id']
+    if game_id not in active_games:
+        # Game session lost, restart
+        session.clear()
+        return redirect(url_for('index'))
+    
+    player = active_games[game_id]['player']
+    
+    return render_template('game.html', 
+                         player_name=player.name,
+                         player_stats=player.to_string())
+
+@app.route('/start_game', methods=['POST'])
+def start_game():
+    """Initialize the game with the first narrative"""
+    if 'game_id' not in session or session['game_id'] not in active_games:
+        return jsonify({'error': 'No active game session'}), 400
+    
+    game_data = active_games[session['game_id']]
+    player = game_data['player']
+    game_engine = game_data['game_engine']
+    
+    # Start the game with an initial prompt
+    initial_prompt = f"The player's name is {player.name}. Begin the adventure by introducing them to a fantasy world. Provide an engaging opening scenario."
+    
+    try:
+        response = game_engine.process_message(player, initial_prompt)
+        
+        return jsonify({
+            'narration': response.narration,
+            'choices': response.choices,
+            'player_stats': player.to_string()
+        })
+    except Exception as e:
+        return jsonify({'error': f'Game error: {str(e)}'}), 500
+
+@app.route('/take_action', methods=['POST'])
+def take_action():
+    """Handle player action selection"""
+    if 'game_id' not in session or session['game_id'] not in active_games:
+        return jsonify({'error': 'No active game session'}), 400
+    
+    action = request.json.get('action', '').strip()
+    if not action:
+        return jsonify({'error': 'No action provided'}), 400
+    
+    game_data = active_games[session['game_id']]
+    player = game_data['player']
+    game_engine = game_data['game_engine']
+    
+    try:
+        # Process the player's chosen action
+        response = game_engine.process_message(player, action)
+        
+        return jsonify({
+            'narration': response.narration,
+            'choices': response.choices,
+            'player_stats': player.to_string()
+        })
+    except Exception as e:
+        return jsonify({'error': f'Game error: {str(e)}'}), 500
+
+@app.route('/custom_action', methods=['POST'])
+def custom_action():
+    """Handle custom player input (when they choose 'Other')"""
+    if 'game_id' not in session or session['game_id'] not in active_games:
+        return jsonify({'error': 'No active game session'}), 400
+    
+    custom_input = request.json.get('custom_input', '').strip()
+    if not custom_input:
+        return jsonify({'error': 'No custom input provided'}), 400
+    
+    game_data = active_games[session['game_id']]
+    player = game_data['player']
+    game_engine = game_data['game_engine']
+    
+    try:
+        # Process the player's custom input
+        response = game_engine.process_message(player, custom_input)
+        
+        return jsonify({
+            'narration': response.narration,
+            'choices': response.choices,
+            'player_stats': player.to_string()
+        })
+    except Exception as e:
+        return jsonify({'error': f'Game error: {str(e)}'}), 500
+
+@app.route('/logout')
+def logout():
+    """End the current game session"""
+    if 'game_id' in session and session['game_id'] in active_games:
+        del active_games[session['game_id']]
+    
+    session.clear()
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

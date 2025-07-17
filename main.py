@@ -1,17 +1,13 @@
+from typing import List, Tuple, Dict, Any
+import re
+from action_config import ACTIONS
 from player import Player
-from game import *
+from game_engine import *
 
-def main():
-    player_name = input("Enter your character's name: ")
-    player = Player(name=player_name)
-    
-    start_game(player)
-    
-    while True:
-        continue_game(player)
-        if player.hp <= 0:
-            print("Game Over! Your character has fallen.")
-            break
+game = GameEngine()
+player = Player("Hero")
 
-if __name__ == "__main__":
-    main()
+while True:
+    user_input = input("Enter your action: ")
+
+    print(game.process_message(player, user_input))

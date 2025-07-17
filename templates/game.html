@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Player Stats Sidebar -->
+    <div class="col-lg-3 col-md-4 mb-4">
+        <div class="game-container p-4 sticky-top">
+            <h5 class="text-center mb-3">
+                <i class="fas fa-user-shield me-2"></i>Player Info
+            </h5>
+            
+            <div class="stats-box text-center" id="player-stats">
+                {{ player_stats }}
+            </div>
+            
+            <div class="mt-3 d-grid">
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-sign-out-alt me-2"></i>End Adventure
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Game Area -->
+    <div class="col-lg-9 col-md-8">
+        <div class="game-container p-4">
+            <div class="text-center mb-4">
+                <h2 class="fantasy-title h3">
+                    <i class="fas fa-scroll me-2"></i>{{ player_name }}'s Adventure
+                </h2>
+            </div>
+            
+            <!-- Game Content Area -->
+            <div id="game-content">
+                <div class="text-center p-5">
+                    <div class="loading-spinner" id="loading">
+                        <i class="fas fa-dragon fa-spin fa-3x text-warning mb-3"></i>
+                        <p class="text-muted">The Dungeon Master is preparing your adventure...</p>
+                    </div>
+                    
+                    <button class="btn btn-fantasy btn-lg" onclick="startGame()" id="start-btn">
+                        <i class="fas fa-play me-2"></i>Start Your Journey
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Narration Area -->
+            <div id="narration-area" style="display: none;">
+                <div class="narration-box" id="narration-text"></div>
+            </div>
+            
+            <!-- Action Buttons Area -->
+            <div id="actions-area" style="display: none;">
+                <h5 class="mb-3">
+                    <i class="fas fa-directions me-2"></i>Choose Your Action:
+                </h5>
+                <div id="action-buttons" class="d-grid gap-2"></div>
+                
+                <!-- Custom Action Input (hidden by default) -->
+                <div id="custom-action-area" style="display: none;" class="mt-3">
+                    <div class="input-group">
+                        <input type="text" 
+                               id="custom-input" 
+                               class="form-control" 
+                               placeholder="Describe your custom action..." 
+                               maxlength="200">
+                        <button class="btn btn-action" onclick="submitCustomAction()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="cancelCustomAction()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Be creative! Describe any action you want to take.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let gameActive = false;
+
+async function startGame() {
+    showLoading();
+    
+    try {
+        const response = await fetch('/start_game', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+        } else {
+            displayGameContent(data);
+            gameActive = true;
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    }
+}
+
+async function takeAction(action) {
+    if (!gameActive) return;
+    
+    showLoading();
+    
+    try {
+        const response = await fetch('/take_action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: action })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+        } else {
+            displayGameContent(data);
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    }
+}
+
+async function submitCustomAction() {
+    const customInput = document.getElementById('custom-input');
+    const action = customInput.value.trim();
+    
+    if (!action) {
+        customInput.focus();
+        return;
+    }
+    
+    if (!gameActive) return;
+    
+    showLoading();
+    cancelCustomAction();
+    
+    try {
+        const response = await fetch('/custom_action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ custom_input: action })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+        } else {
+            displayGameContent(data);
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    }
+}
+
+function showCustomInput() {
+    document.getElementById('custom-action-area').style.display = 'block';
+    document.getElementById('custom-input').focus();
+}
+
+function cancelCustomAction() {
+    document.getElementById('custom-action-area').style.display = 'none';
+    document.getElementById('custom-input').value = '';
+}
+
+function displayGameContent(data) {
+    // Update player stats
+    if (data.player_stats) {
+        document.getElementById('player-stats').innerHTML = data.player_stats;
+    }
+    
+    // Show narration
+    const narrationArea = document.getElementById('narration-area');
+    const narrationText = document.getElementById('narration-text');
+    narrationText.innerHTML = formatNarration(data.narration);
+    narrationArea.style.display = 'block';
+    narrationArea.classList.add('fade-in');
+    
+    // Show action buttons
+    const actionsArea = document.getElementById('actions-area');
+    const actionButtons = document.getElementById('action-buttons');
+    
+    actionButtons.innerHTML = '';
+    
+    if (data.choices && data.choices.length > 0) {
+        data.choices.forEach((choice, index) => {
+            const button = document.createElement('button');
+            button.className = 'btn btn-action mb-2';
+            
+            if (choice.toLowerCase().includes('other')) {
+                button.innerHTML = `<i class="fas fa-edit me-2"></i>${choice}`;
+                button.onclick = () => showCustomInput();
+            } else {
+                const icons = ['⚔️', '🏃', '🔍', '💬', '🛡️', '🎒'];
+                const icon = icons[index % icons.length];
+                button.innerHTML = `${icon} ${choice}`;
+                button.onclick = () => takeAction(choice);
+            }
+            
+            actionButtons.appendChild(button);
+        });
+    }
+    
+    actionsArea.style.display = 'block';
+    actionsArea.classList.add('fade-in');
+    
+    // Hide start button and loading
+    document.getElementById('start-btn').style.display = 'none';
+    hideLoading();
+    
+    // Scroll to latest content
+    setTimeout(() => {
+        narrationArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function formatNarration(text) {
+    // Convert markdown-like formatting to HTML
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+}
+
+function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+    document.querySelector('.loading-spinner').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+    document.querySelector('.loading-spinner').style.display = 'none';
+}
+
+function showError(message) {
+    hideLoading();
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+    errorDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const gameContent = document.getElementById('game-content');
+    gameContent.insertBefore(errorDiv, gameContent.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Handle custom input enter key
+document.addEventListener('DOMContentLoaded', function() {
+    const customInput = document.getElementById('custom-input');
+    customInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            submitCustomAction();
+        }
+    });
+});
+</script>
+{% endblock %}
