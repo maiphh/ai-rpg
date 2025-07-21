@@ -1,85 +1,120 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="game-container p-5 text-center">
-            <div class="mb-4">
-                <i class="fas fa-dragon fa-4x text-warning mb-3"></i>
-                <h1 class="fantasy-title display-4 fw-bold mb-3">AI RPG</h1>
-                <h2 class="h4 text-muted mb-4">🧙‍♂️ Dungeon Master Adventure</h2>
-            </div>
-            
-            <div class="mb-4">
-                <p class="lead text-muted">
-                    Welcome, brave adventurer! Enter your name to begin your epic journey 
-                    in a world guided by an AI Dungeon Master.
-                </p>
-            </div>
-            
-            {% if error %}
-            <div class="alert alert-danger" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-            </div>
-            {% endif %}
-            
-            <form method="POST" action="{{ url_for('register') }}" class="mb-4">
-                <div class="mb-3">
-                    <label for="player_name" class="form-label fw-bold">
-                        <i class="fas fa-user me-2"></i>Your Adventurer Name:
-                    </label>
-                    <input type="text" 
-                           class="form-control form-control-lg text-center" 
-                           id="player_name" 
-                           name="player_name" 
-                           placeholder="Enter your hero's name..." 
-                           required 
-                           maxlength="30"
-                           autocomplete="off">
+<div class="flex items-center justify-center min-h-screen">
+    <div class="max-w-2xl mx-auto">
+        <!-- Main Container -->
+        <div class="bg-gradient-to-br from-dnd-wood via-dnd-leather to-dnd-bronze rounded-3xl border-4 border-dnd-gold shadow-2xl backdrop-blur-sm animate-glow">
+            <div class="p-8 text-center">
+                <!-- Dragon Icon -->
+                <div class="mb-8">
+                    <i class="fas fa-dragon text-8xl text-dnd-flame animate-float drop-shadow-lg"></i>
                 </div>
-                <button type="submit" class="btn btn-fantasy btn-lg">
-                    <i class="fas fa-play me-2"></i>Begin Adventure
-                </button>
-            </form>
-            
-            <div class="mt-4">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Your choices will shape your destiny in this AI-driven fantasy world
-                </small>
+                
+                <!-- Title -->
+                <h1 class="font-cinzel-decorative text-5xl font-bold mb-4 bg-gradient-to-r from-dnd-flame via-dnd-gold to-dnd-flame bg-clip-text text-transparent animate-pulse">
+                    <i class="fas fa-dice-d20 mr-3 text-dnd-gold"></i>
+                    EPIC D&D ADVENTURE
+                    <i class="fas fa-sword ml-3 text-dnd-gold"></i>
+                </h1>
+                
+                <!-- Subtitle -->
+                <h2 class="text-xl text-dnd-gold mb-8 font-semibold">
+                    <i class="fas fa-scroll mr-2"></i>
+                    🧙‍♂️ AI Dungeon Master Awaits 🧙‍♂️
+                    <i class="fas fa-magic ml-2"></i>
+                </h2>
+                
+                <!-- Decorative Divider -->
+                <div class="flex items-center justify-center mb-8">
+                    <div class="flex space-x-4 text-2xl text-dnd-gold">
+                        <span>⚔️</span>
+                        <span class="animate-pulse">⚡</span>
+                        <span>🐉</span>
+                        <span class="animate-pulse">⚡</span>
+                        <span>⚔️</span>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="bg-gradient-to-r from-dnd-navy to-dnd-blue rounded-2xl border-2 border-dnd-bronze p-6 mb-8">
+                    <p class="text-lg text-dnd-gold mb-4 font-semibold">
+                        <strong>Hark, brave soul!</strong> The ancient dragons stir, and destiny calls your name...
+                    </p>
+                    <p class="text-dnd-parchment leading-relaxed">
+                        Enter the realm where <strong class="text-dnd-flame">magic flows like rivers</strong>, 
+                        where <strong class="text-dnd-flame">heroes are forged in fire</strong>, and where your choices 
+                        shape the very fabric of reality. The AI Dungeon Master has prepared 
+                        <strong class="text-dnd-gold">epic quests</strong> that will test your courage, 
+                        wisdom, and strength!
+                    </p>
+                </div>
+                
+                <!-- Error Message -->
+                {% if error %}
+                <div class="bg-red-900 border-2 border-red-600 rounded-lg p-4 mb-6 animate-fade-in">
+                    <i class="fas fa-dragon mr-2 text-red-400"></i>
+                    <strong class="text-red-300">The fates whisper:</strong> 
+                    <span class="text-red-200">{{ error }}</span>
+                </div>
+                {% endif %}
+                
+                <!-- Registration Form -->
+                <form method="POST" action="{{ url_for('register') }}" class="space-y-6">
+                    <div>
+                        <label for="player_name" class="block text-dnd-gold font-semibold mb-3 text-left">
+                            <i class="fas fa-user-ninja mr-2 text-dnd-flame"></i>
+                            Inscribe Your Legendary Name:
+                            <i class="fas fa-feather-alt ml-2 text-dnd-flame"></i>
+                        </label>
+                        <input type="text" 
+                               class="w-full px-6 py-4 bg-gradient-to-r from-dnd-wood to-dnd-leather border-2 border-dnd-bronze rounded-xl text-dnd-parchment text-center text-lg focus:border-dnd-gold focus:ring-4 focus:ring-dnd-gold/30 focus:outline-none transition-all duration-300 placeholder-dnd-bronze/70" 
+                               id="player_name" 
+                               name="player_name" 
+                               placeholder="Enter thy heroic name, champion..." 
+                               required 
+                               maxlength="30"
+                               autocomplete="off">
+                        <small class="block text-dnd-bronze mt-2 text-sm italic">
+                            <i class="fas fa-dice-d20 mr-1"></i>
+                            Choose wisely, for this name shall echo through the realms!
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-dnd-flame to-orange-600 hover:from-dnd-flame/90 hover:to-orange-500 border-3 border-dnd-gold rounded-xl px-8 py-4 text-white font-bold text-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-dnd-gold/50">
+                        <i class="fas fa-dragon mr-3"></i>
+                        <span>FORGE YOUR DESTINY</span>
+                        <i class="fas fa-fire ml-3"></i>
+                    </button>
+                </form>
+                
+                <!-- Feature Icons -->
+                <div class="grid grid-cols-3 gap-6 mt-8 pt-6 border-t-2 border-dnd-bronze/30">
+                    <div class="text-center">
+                        <i class="fas fa-dice-d20 text-4xl text-dnd-gold mb-2 animate-float"></i>
+                        <p class="text-sm text-dnd-bronze">Random Adventures</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-magic text-4xl text-dnd-flame mb-2 animate-float" style="animation-delay: 0.5s;"></i>
+                        <p class="text-sm text-dnd-bronze">AI-Powered Stories</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-crown text-4xl text-dnd-gold mb-2 animate-float" style="animation-delay: 1s;"></i>
+                        <p class="text-sm text-dnd-bronze">Legendary Quests</p>
+                    </div>
+                </div>
+                
+                <!-- Epic Quote -->
+                <div class="mt-6 text-center">
+                    <small class="text-dnd-bronze/80 italic">
+                        <i class="fas fa-scroll mr-1"></i>
+                        "In this realm, every choice echoes through eternity, and every hero's tale becomes legend..."
+                        <i class="fas fa-scroll ml-1"></i>
+                    </small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-// Add some interactive effects
-document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('player_name');
-    const submitBtn = document.querySelector('button[type="submit"]');
-    
-    input.addEventListener('input', function() {
-        if (this.value.trim().length > 0) {
-            submitBtn.classList.add('pulse');
-        } else {
-            submitBtn.classList.remove('pulse');
-        }
-    });
-    
-    // Focus on input when page loads
-    input.focus();
-});
-</script>
-
-<style>
-.pulse {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-</style>
 {% endblock %}

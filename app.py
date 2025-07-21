@@ -81,7 +81,8 @@ def start_game():
         return jsonify({
             'narration': response.narration,
             'choices': response.choices,
-            'player_stats': player.to_string()
+            'player_stats': player.to_string(),
+            'actions': response.actions,
         })
     except Exception as e:
         return jsonify({'error': f'Game error: {str(e)}'}), 500
@@ -107,7 +108,8 @@ def take_action():
         return jsonify({
             'narration': response.narration,
             'choices': response.choices,
-            'player_stats': player.to_string()
+            'player_stats': player.to_string(),
+            'actions': response.actions
         })
     except Exception as e:
         return jsonify({'error': f'Game error: {str(e)}'}), 500
